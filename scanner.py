@@ -4,7 +4,6 @@ import openpyxl
 import os
 import time
 import datetime
-import tkinter as tk
 from tkinter import filedialog
 
 from openpyxl.styles import PatternFill
