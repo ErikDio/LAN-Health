@@ -4,20 +4,26 @@ import openpyxl
 import os
 import time
 import datetime
+import tkinter as tk
+from tkinter import filedialog
 
 from openpyxl.styles import PatternFill
 
+DEBUG:bool = False
+
 def main():
-    local_arquivo:str = os.path.dirname(os.path.realpath(__file__))
-    arquivo_planilha:str = local_arquivo + "plan.xlsx"
+    print("Esta é uma ferramenta utilizada para explorar a rede a fim de diagnosticar possíveis conflitos de IP em redes com vários dispositivos.\n\nSelecione onde deseja armazenar a planilha.")
+    time.sleep(5)
+    local_arquivo = filedialog.askdirectory()
+    print(f"\n{"-"*50}\n")
+    arquivo_planilha:str = local_arquivo + "/plan.xlsx"
     alvo:str = ""
     fim:int = 255
     mapa:nmap.nmap.PortScanner
-    conf:str = "-sS" #sn Escaneia a rede mais rapidamente ao não buscar por portas. A remoção pode aumentar o número de resultados, mas irá aumentar drasticamente o tempo de execução da tarefa.
-    ips:dict = {}
+    conf:str = "-sn" #sn Escaneia a rede mais rapidamente ao não buscar por portas. A remoção pode aumentar o número de resultados, mas irá aumentar drasticamente o tempo de execução da tarefa.
     planilha = openpyxl.Workbook()
     tempo = 1
-    log = False
+    global DEBUG
     while True:
         try:
             alvo = input("Digite o IPv4 que deve ser escaneado:\n")
@@ -34,7 +40,17 @@ def main():
             print("IP final definido para 255")
             fim = 255
             break
-
+    print(f"\n{"-"*50}\n")
+    while True:
+        _inp = input("Digite o intervalo entre cada scan (em minutos): ex 10\n")
+        if (_inp.isdigit):
+            tempo = int(_inp)
+            break
+    print(f"\n{"-"*50}\n")
+    _inp = input("Digite as opções de execução: -sS -sn (ENTER para -sn)\n")
+    print(f"\n{"-"*50}\n")
+    if(_inp!=''):
+        conf = _inp
     #Seção onde ocorre manipulação inicial da planilha
     try:
         if(os.path.exists(arquivo_planilha)):
@@ -63,8 +79,8 @@ def main():
     while True:
         now = datetime.datetime.now()
         print(f"{now.strftime("%H:%M:%S")}: Iniciando o scan em {alvo}")
+        ips:dict = {}
         mapa = scan(alvo + "-" + str(fim), conf)
-
         #Adiciona os IPs e MACs escaneados à variável "ips", em seguida os ordena em ordem crescente
         for host in mapa.all_hosts():
             mac = mac_detalhe = "Nan"
@@ -80,18 +96,18 @@ def main():
         #Inicia o processo de identificação de endereços disponíveis
         for ip in ips:
             curr = int(ip.split('.')[-1])
-            if(log == True):
+            if(DEBUG == True):
                 print(f"{ip}\t{ips[ip]['status']}\tmac: {ips[ip]['mac'].ljust(20)}\tdetalhe: {ips[ip]['detalhe']}")
             if (curr>prev+1):
                 free_ip_lst.extend(free_ip_handler(ip_alvo=alvo, ip_atual=curr, ip_anterior=prev))
             prev = curr
-
         #Caso o último IP em uso tenha o final menor que a variável <fim> (geralmente .255), realiza-se mais uma checagem adicionando todos os IPs entre o último em uso até <fim> (.255)
         if (prev<255):
             free_ip_lst.extend(free_ip_handler(ip_alvo=alvo, ip_atual=fim+1, ip_anterior=prev)) 
-        if(log == True):
+        if(DEBUG == True):
             print(f"\n{"-"*50}\n\nLIVRES: \n")
             print(*free_ip_lst, sep='\n')
+            print(len(ips))
         salvar_planilha(arquivo=arquivo_planilha, ips=ips, freeip=free_ip_lst, fim=fim, tempo=tempo)
         now = datetime.datetime.now()
         print(f"{now.strftime("%H:%M:%S")}: Scan em {alvo} realizado com sucesso. Próximo scan em {tempo} minuto(s).")
@@ -100,7 +116,9 @@ def main():
 def criar_planilha(local_planilha:str, target:str, end:int): #Formata a planilha e coloca o IP alvo na primeira célula
     wb = openpyxl.Workbook()
     awb = wb.active
-    print(awb['F1'].value)
+    global DEBUG
+    if(DEBUG == True):
+        print(awb['F1'].value)
     awb.merge_cells("A1:E1")
     awb.column_dimensions['A'].width = 4
     awb.column_dimensions['B'].width = 20
@@ -111,7 +129,7 @@ def criar_planilha(local_planilha:str, target:str, end:int): #Formata a planilha
     awb.cell(2,3, "STATUS")
     awb.cell(2,4, "TEMPO ONLINE")
     awb.cell(2,5, "MAC")
-    for i, ip in enumerate(range(int(target.split('.')[-1]), end+1)): #Adiciona os IPs do escopo para a planilha e coloca o tempo de uso como 0
+    for i, ip in enumerate(range(int(target.split('.')[-1]), end)): #Adiciona os IPs do escopo para a planilha e coloca o tempo de uso como 0
         awb.cell(i+3, 2, f"{".".join(target.split('.')[:-1])}.{str(ip+1)}")
         awb.cell(i+3, 4, "0")
     wb.save(local_planilha)
@@ -122,7 +140,7 @@ def salvar_planilha(arquivo:str, ips:dict, freeip:list, fim:int, tempo:int):
     laranja = PatternFill(start_color="cf820e", end_color="cf820e", fill_type="solid")
     verde = PatternFill(start_color="68cf0e", end_color="68cf0e", fill_type="solid")
     vermelho = PatternFill(start_color="cf0e2b", end_color="cf0e2b", fill_type="solid")
-    for linha in range(3,fim+1):
+    for linha in range(3,fim+2):#+2 compensa as primeiras duas linhas que não possuem IPs
         awb.cell(linha, 3, "")
         val = awb.cell(row=linha,column=2).value
         if(val in freeip):
@@ -152,8 +170,9 @@ def scan(target, conf): #Responsável por executar o NMAP no IP fornecido
     resultado = nmap.PortScanner()
     try:
         resultado.scan(target, arguments=conf)
-    except Exception as erro:
-        input(f"O programa retornou o erro '{erro}' ao tentar escanear a rede solicitada.\nPressione ENTER para para sair.\n")
+    except Exception as e:
+        input(f"Ocorreu o erro '{e}' ao tentar escanear a rede.\nPressione ENTER para finalizar o programa e tente novamente com outras configurações.\n")
+        SystemExit()
     return resultado
 
 def free_ip_handler(ip_alvo:str, ip_atual:int, ip_anterior:int): #Detecta quais IPs estão livres e os retorna
