@@ -2,7 +2,7 @@
 
 This Python program leverages `python-nmap` to scan your network for devices sharing the same IP address, monitors their uptime, and retrieves their MAC addresses. It utilizes the `python-nmap` and `openpyxl` libraries for network scanning and data output, respectively.
 
-##Requirements
+## Requirements
 
 Python 3.6 or later (for f-string support)
 python-nmap library: pip install python-nmap
