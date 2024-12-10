@@ -2,20 +2,18 @@ import nmap
 import ipaddress
 import openpyxl
 import os
+import sys
 import time
 import datetime
-from tkinter import filedialog
-
 from openpyxl.styles import PatternFill
 
 DEBUG:bool = False
 
 def main():
-    print("Esta é uma ferramenta utilizada para explorar a rede a fim de diagnosticar possíveis conflitos de IP em redes com vários dispositivos.\n\nSelecione onde deseja armazenar a planilha.")
-    time.sleep(5)
-    local_arquivo = filedialog.askdirectory()
+    print("Esta é uma ferramenta utilizada para explorar a rede a fim de diagnosticar possíveis conflitos de IP em redes sem DHCP com vários dispositivos.\nEla coleta dados de scans feitos por NMAP com o tempo, e os organiza e salva em um arquivo chamado result.xlsx.\nPara que a ferramenta funcione corretamente, tenha certeza de que ela está sendo executada em modo administrador para evitar potenciais erros.")
+    local_arquivo:str = os.path.dirname(sys.executable())
+    arquivo_planilha:str = local_arquivo + "/result.xlsx"
     print(f"\n{"-"*50}\n")
-    arquivo_planilha:str = local_arquivo + "/plan.xlsx"
     alvo:str = ""
     fim:int = 255
     mapa:nmap.nmap.PortScanner
@@ -25,7 +23,7 @@ def main():
     global DEBUG
     while True:
         try:
-            alvo = input("Digite o IPv4 que deve ser escaneado:\n")
+            alvo = input("Digite o ip do seu gateway padrão ou dispositivo que deseja verificar: Ex 192.168.1.1\n")
             ipaddress.IPv4Address(alvo)
             break
         except ValueError:
@@ -46,7 +44,7 @@ def main():
             tempo = int(_inp)
             break
     print(f"\n{"-"*50}\n")
-    _inp = input("Digite as opções de execução: -sS -sn (ENTER para -sn)\n")
+    _inp = input("Digite as opções de execução do nmap: Ex -sS -sn (ENTER para -sn)\n")
     print(f"\n{"-"*50}\n")
     if(_inp!=''):
         conf = _inp
