@@ -3,16 +3,32 @@ import ipaddress
 import openpyxl
 import os
 import sys
+import re
 import time
 import datetime
 from openpyxl.styles import PatternFill
 
-DEBUG:bool = False
+DEBUG:bool = True
 
 def main():
-    print("Esta é uma ferramenta utilizada para explorar a rede a fim de diagnosticar possíveis conflitos de IP em redes sem DHCP com vários dispositivos.\nEla coleta dados de scans feitos por NMAP com o tempo, e os organiza e salva em um arquivo chamado result.xlsx.\nPara que a ferramenta funcione corretamente, tenha certeza de que ela está sendo executada em modo administrador para evitar potenciais erros.")
-    local_arquivo:str = os.path.dirname(sys.executable())
-    arquivo_planilha:str = local_arquivo + "/result.xlsx"
+    global DEBUG
+    try:
+        if(sys.argv[1].lower() == "debug"):
+            DEBUG = True
+        else:
+            DEBUG = False
+    except IndexError:
+        DEBUG = False
+    print("\nEsta é uma ferramenta utilizada para explorar a rede a fim de diagnosticar possíveis conflitos de IP em redes sem DHCP com vários dispositivos.\nEla coleta dados de scans feitos por NMAP com o tempo, e os organiza e salva em um arquivo chamado result.xlsx.\nPara que a ferramenta funcione corretamente, tenha certeza de que ela está sendo executada em modo administrador para evitar potenciais erros.")
+    local_arquivo:str = os.path.dirname(sys.executable)
+    _ = re.split(r'/|\\', sys.executable)[-1].lower()
+    if(_ == "python.exe"):
+        local_arquivo = os.path.dirname(os.path.realpath(__file__))
+    arquivo_planilha:str = local_arquivo + "/plan.xlsx"
+    if(DEBUG == True):
+        print(sys.executable)
+        print(arquivo_planilha)
+        print(local_arquivo)
     print(f"\n{"-"*50}\n")
     alvo:str = ""
     fim:int = 255
@@ -20,7 +36,6 @@ def main():
     conf:str = "-sn" #sn Escaneia a rede mais rapidamente ao não buscar por portas. A remoção pode aumentar o número de resultados, mas irá aumentar drasticamente o tempo de execução da tarefa.
     planilha = openpyxl.Workbook()
     tempo = 1
-    global DEBUG
     while True:
         try:
             alvo = input("Digite o ip do seu gateway padrão ou dispositivo que deseja verificar: Ex 192.168.1.1\n")
@@ -40,7 +55,7 @@ def main():
     print(f"\n{"-"*50}\n")
     while True:
         _inp = input("Digite o intervalo entre cada scan (em minutos): ex 10\n")
-        if (_inp.isdigit):
+        if (_inp.isdigit()):
             tempo = int(_inp)
             break
     print(f"\n{"-"*50}\n")
