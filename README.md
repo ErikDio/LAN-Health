@@ -4,47 +4,30 @@ This Python program leverages `python-nmap` to scan your network for devices sha
 
 ## Requirements
 
-Python 3.6 or later (for f-string support)
-python-nmap library: pip install python-nmap
-openpyxl library: pip install openpyxl
-Installation
+Python 3.6 or later (for f-string support)  
+python-nmap library: pip install python-nmap  
+openpyxl library: pip install openpyxl  
 
-Clone this repository: git clone https://github.com/your-username/network-scanner.git
-Install the required libraries: pip install -r requirements.txt (if you have a requirements.txt file) or individually using pip install python-nmap openpyxl
+## Installation
+Clone this repository: git clone https://github.com/ErikDio/LAN-Health.git  
+Install the required libraries: pip install -r requirements.txt (if you have a requirements.txt file) or individually using pip install python-nmap openpyxl  
 Usage
 
-(Optional) Edit config.py to customize scanning parameters (e.g., target IP range, scan type).
-Run the program: python network_scanner.py
-If you want to specify a starting IP address, use: python network_scanner.py <starting_ip>
-Output
+(Optional) Run the program with debug as a arg so it can print information useful for troubleshooting.  
+Run the program: python network_scanner.py  
 
-The program generates a spreadsheet named network_scan_results.xlsx in the same directory, containing the following information (columns can be customized):
+The program generates a spreadsheet named plan.xlsx in the same directory, containing the following information:  
 
-IP Address
-Uptime
-MAC Address (if available)
-Additional information retrieved from nmap (optional)
-Notes
+Status  
+IP Address  
+Uptime  
+MAC Address (if available)  
 
-This program requires root or administrative privileges to perform ARP scans for MAC addresses.
-Be cautious when scanning networks you don't own or have permission to access. Respect network security policies.
-Disclaimer
+This program requires root or administrative privileges to perform ARP scans for MAC addresses.  
+Be cautious when scanning networks you don't own or have permission to access. Respect network security policies.  
 
-This program is designed for educational purposes only. Use it responsibly and ethically.
+### Disclaimer
 
-Additional Features (Optional)
+This program is designed for educational purposes only. Use it responsibly and ethically.  
 
-Implement recursive scanning by checking for devices on the same subnet as discovered devices.
-Add options for different scan types using nmap arguments (e.g., -sS for TCP SYN scan).
-Filter results based on uptime thresholds to identify potentially new or dormant devices.
-Contributing
-
-We welcome contributions to this project! Feel free to fork the repository, make changes, and submit pull requests.
-
-License
-
-This project is licensed under the (insert your preferred open-source license).
-
-Contact
-
-For questions or suggestions, please contact (your email address or other contact information).
+We welcome contributions to this project! Feel free to fork the repository, make changes, and submit pull requests.  
