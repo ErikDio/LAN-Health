@@ -18,6 +18,7 @@ Usage
 (Optional) Run the program with `-debug` and/or `-log` as an arg so it can print information useful for troubleshooting.  
 
 ## Usage
+- Install the dependencies
 - Run the program: python scanner/main.py < args >
 - Input the IP(default gateway) of the device you want to scan
 - Input the scan range
