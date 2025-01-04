@@ -6,11 +6,11 @@ import re
 import time
 import datetime
 import openpyxl
-import velocidade
-
+import shutil
 from openpyxl.styles import PatternFill
 
 from grafico import Grafico
+from velocidade import Velocidade
 
 DEBUG:bool = False
 LOG:bool = False
@@ -19,6 +19,9 @@ horario = 22
 
 def main():
     global DEBUG, LOG
+    if shutil.which("nmap") is None:
+        input("NMAP não está instalado. Instale o Nmap antes de executar este programa.\nPressione ENTER para finalizar")
+        SystemExit()
     for arg in sys.argv:
         if(arg.lower() == "-debug"):
             DEBUG = True
@@ -31,72 +34,22 @@ def main():
     _ = re.split(r'/|\\', sys.executable)[-1].lower()
     if(_ == "python.exe"):
         local_arquivo = os.path.dirname(os.path.realpath(__file__))
-    arquivo_planilha:str = local_arquivo + "/scan.xlsx"
+    ARQUIVO_PLANILHA:str = local_arquivo + "/scan.xlsx"
     if(LOG == True):
         print(sys.executable)
-        print(arquivo_planilha)
+        print(ARQUIVO_PLANILHA)
         print(local_arquivo)
+    
     print(f"\n{"-"*50}\n")
-    alvo:str = ""
-    fim:int = 255
+    dados:dict = coletar_dados()
+    alvo:str = dados["alvo"]
+    fim:int = dados["fim"]
+    conf:str = dados["conf"]
+    tempo:int = dados["tempo"]
     mapa:nmap.nmap.PortScanner
-    conf:str = "-sn" #sn Escaneia a rede mais rapidamente ao não buscar por portas. A remoção pode aumentar o número de resultados, mas irá aumentar drasticamente o tempo de execução da tarefa.
-    planilha = openpyxl.Workbook()
-    tempo = 1
-    while True:
-        try:
-            alvo = input("Digite o ip do seu gateway padrão ou dispositivo que deseja verificar: Ex 192.168.1.1\n")
-            ipaddress.IPv4Address(alvo)
-            break
-        except ValueError:
-            print("Ip inválido.")
-    print(f"\n{"-"*50}\n")
-    while True:
-        try:
-            fim = int(input("Qual o final do último IP que deve ser escaneado? (pressione ENTER para o padrão 255)\n"))
-            break
-        except ValueError:
-            print("IP final definido para 255")
-            fim = 255
-            break
-    print(f"\n{"-"*50}\n")
-    _inp = input("Digite o intervalo entre cada scan (em minutos): ex 10\n")
-    if (_inp.isdigit()):
-        tempo = int(_inp)
-    else:
-        tempo = 10
-    print(f"\n{"-"*50}\n")
-    _inp = input("Digite as opções de execução do nmap: Ex -sS -sn (ENTER para -sn)\n")
-    print(f"\n{"-"*50}\n")
-    if(_inp!=''):
-        conf = _inp
-    #Seção onde ocorre manipulação inicial da planilha
-    try:
-        if(os.path.exists(arquivo_planilha)):
-            planilha = openpyxl.load_workbook(arquivo_planilha)
-            _a_planilha = planilha["Status"]
-            _ip = alvo.split(".")
-            _ip[-1] = str(fim)
-            _ipfinstr = ".".join(_ip)
-            if(_a_planilha.cell(_a_planilha.max_row,2).value==_ipfinstr):
-                print ("\nJá existe uma planilha com os valores necessários. Ela será usada.")
-            else:
-                raise Exception("A planilha não contém os valores necessários.")
-        else:
-            raise Exception("A planilha ainda não existe ainda não existe.")
-    except Exception as e:
-        if(os.path.exists(arquivo_planilha)):
-            os.rename(arquivo_planilha, arquivo_planilha+".old")
-        criar_planilha(local_planilha=arquivo_planilha, target=alvo, end=fim)
-        print(f"Uma planilha onde serão salvos os dados foi criada em ''{arquivo_planilha}''")
-    print("Lidando com a planilha...")
-    try:
-        planilha = openpyxl.load_workbook(arquivo_planilha)
-        print("Planilha carregada com sucesso!")
-    except Exception as e:
-        input(f"A tentativa de carregar a planilha levantou o seguinte erro: {e}\nPressione ENTER para finalizar o programa")
-        return
+    validar_planilha(arquivo=ARQUIVO_PLANILHA, alvo=alvo, fim=fim)
     print(f"\n\n{"-"*50}\n\n")
+    
     while True:
         now = datetime.datetime.now()
         print(f"{now.strftime("%H:%M:%S")}: Iniciando o scan em {alvo}")
@@ -129,7 +82,7 @@ def main():
             print(f"\n{"-"*50}\n\nLIVRES: \n")
             print(*free_ip_lst, sep='\n')
             print(len(ips))
-        salvar_planilha(arquivo=arquivo_planilha, ips=ips, freeip=free_ip_lst, fim=fim, tempo=tempo)
+        salvar_planilha(arquivo=ARQUIVO_PLANILHA, ips=ips, freeip=free_ip_lst, fim=fim, tempo=tempo)
         now = datetime.datetime.now()
         print(f"{now.strftime("%H:%M:%S")}: Scan em {alvo} realizado com sucesso. Próximo scan em {tempo} minuto(s).")
         if (DEBUG == False):
@@ -138,15 +91,80 @@ def main():
             time.sleep(10)
 
 
+def coletar_dados():
+    alvo:str = ""
+    fim:int = 255
+    conf:str = "-sn" #sn Escaneia a rede mais rapidamente ao não buscar por portas. A remoção pode aumentar o número de resultados, mas irá aumentar drasticamente o tempo de execução da tarefa.
+    tempo:int = 1
+    while True:
+        try:
+            alvo = input("Digite o ip do seu gateway padrão ou dispositivo que deseja verificar: Ex 192.168.1.1\n")
+            ipaddress.IPv4Address(alvo)
+            break
+        except ValueError:
+            print("Ip inválido.")
+    print(f"\n{"-"*50}\n")
+    while True:
+        try:
+            fim = int(input("Qual o final do último IP que deve ser escaneado? (pressione ENTER para o padrão 255)\n"))
+            break
+        except ValueError:
+            print("IP final definido para 255")
+            fim = 255
+            break
+    print(f"\n{"-"*50}\n")
+    _inp = input("Digite o intervalo entre cada scan (em minutos): ex 10\n")
+    if (_inp.isdigit()):
+        tempo = int(_inp)
+    else:
+        tempo = 10
+    print(f"\n{"-"*50}\n")
+    _inp = input("Digite as opções de execução do nmap: Ex -sS -sn (ENTER para -sn)\n")
+    print(f"\n{"-"*50}\n")
+    if(_inp!=''):
+        conf = _inp
+    return {"alvo":alvo, "fim":fim, "tempo":tempo, "conf":conf}
+
+
+def validar_planilha(arquivo, alvo, fim):
+    #Seção onde ocorre manipulação inicial da planilha
+    planilha = openpyxl.Workbook()
+    try:
+        if(os.path.exists(arquivo)):
+            planilha = openpyxl.load_workbook(arquivo)
+            _a_planilha = planilha["Status"]
+            _ip = alvo.split(".")
+            _ip[-1] = str(fim)
+            _ipfinstr = ".".join(_ip)
+            if(_a_planilha.cell(_a_planilha.max_row,2).value==_ipfinstr):
+                print ("\nJá existe uma planilha com os valores necessários. Ela será usada.")
+            else:
+                raise Exception("A planilha não contém os valores necessários.")
+        else:
+            raise Exception("A planilha ainda não existe.")
+    except Exception as e:
+        if(os.path.exists(arquivo)):
+            os.rename(arquivo, arquivo+".old")
+        criar_planilha(local_planilha=arquivo, target=alvo, end=fim)
+        print(f"Uma planilha onde serão salvos os dados foi criada em ''{arquivo}''")
+    print("Lidando com a planilha...")
+    try:
+        planilha = openpyxl.load_workbook(arquivo)
+        print("Planilha carregada com sucesso!")
+    except Exception as e:
+        input(f"A tentativa de carregar a planilha levantou o seguinte erro: {e}\nPressione ENTER para finalizar o programa")
+        SystemExit()
+
+
 def criar_planilha(local_planilha:str, target:str, end:int): #Formata a planilha e coloca o IP alvo na primeira célula
     global DEBUG, LOG
-    
+
     wb = openpyxl.Workbook()
     statuswb = wb.active
     statuswb.title = "Status"
     wb.create_sheet("Grafico", 2)
     wb.create_sheet("Dados", 3)
-    
+
     statuswb.column_dimensions['A'].width = 4
     statuswb.column_dimensions['B'].width = 20
     statuswb.column_dimensions['D'].width = 20
@@ -173,7 +191,7 @@ def criar_planilha(local_planilha:str, target:str, end:int): #Formata a planilha
     wb.save(local_planilha)
     grafico = Grafico()
     grafico.setup(DEBUG, LOG, local_planilha)
-    grafico.GerarGrafico()
+    grafico.gerar_graficos()
 
 
 def salvar_planilha(arquivo:str, ips:dict, freeip:list, fim:int, tempo:int):
@@ -232,7 +250,7 @@ def salvar_planilha(arquivo:str, ips:dict, freeip:list, fim:int, tempo:int):
         wbdados.cell(_tempo+2, 3, len(freeip))
         wbdados.cell(_tempo+2, 6, _conflito)
         print(f"Testando a velocidade da internet...")
-        _velocidade = velocidade.Velocidade().Teste(LOG)
+        _velocidade = Velocidade().teste(LOG)
         _velocidade = (_velocidade/1000000)/8 #/8 para mB
         _velocidade = round(_velocidade, 3)
         wbdados.cell(_tempo+2, 7, _velocidade)
