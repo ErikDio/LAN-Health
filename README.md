@@ -12,8 +12,11 @@ This Python program uses `python-nmap` to scan your network for devices sharing 
 
 ## Installation
 Clone this repository: git clone https://github.com/ErikDio/LAN-Health.git  
-Install the required libraries: pip install -r requirements.txt (if you have a requirements.txt file) or individually using pip install python-nmap openpyxl  
+Install the required libraries: pip install -r requirements.txt (if you have a requirements.txt file) or individually using pip install python-nmap openpyxl speedtest-cli
 Usage
+
+This program requires root or administrative privileges to perform ARP scans for MAC addresses.
+Be cautious when scanning networks you don't own or have permission to access. Respect network security policies.
 
 (Optional) Run the program with `-debug` and/or `-log` as an arg so it can print information useful for troubleshooting.  
 
@@ -28,9 +31,6 @@ Usage
   - Status sheet: Status, (LAN)IP Address, Uptime, MAC Address
   - Grafico sheet: Various charts related to IP usage conflict and net speed.
   - Dados sheet: Data related to charts
-
-This program requires root or administrative privileges to perform ARP scans for MAC addresses.
-Be cautious when scanning networks you don't own or have permission to access. Respect network security policies.
 
 ### Disclaimer
 
