@@ -11,6 +11,7 @@ from openpyxl.styles import PatternFill
 
 from grafico import Grafico
 from velocidade import Velocidade
+import interface
 
 DEBUG:bool = False
 LOG:bool = False
@@ -18,6 +19,7 @@ ultima_hora = None
 horario = 22
 
 def main():
+    interface()
     global DEBUG, LOG
     if shutil.which("nmap") is None:
         input("NMAP não está instalado. Instale o Nmap antes de executar este programa.\nPressione ENTER para finalizar")
