@@ -29,6 +29,7 @@ class Widgets():
         self.checkbox_widget.append(ttk.Checkbutton(self.root, text=text, variable=self.checkbox_vars[name], command = lambda: self.atualizar(name)))
         self.checkbox_widget[-1].name = name
         self.checkbox_widget[-1].grid(row=row, column=column, pady = 5)
+
     def click(self):
         print(variaveis.DEBUG)
         print("Button clicked")

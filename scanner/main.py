@@ -15,8 +15,6 @@ from velocidade import Velocidade
 import interface
 import variaveis
 
-DEBUG:bool = False
-LOG:bool = False
 ultima_hora = None
 horario = 22
 
@@ -46,20 +44,13 @@ def main():
     if shutil.which("nmap") is None:
         input("NMAP não está instalado. Instale o Nmap antes de executar este programa.\nPressione ENTER para finalizar")
         SystemExit()
-    for arg in sys.argv:
-        if(arg.lower() == "-debug"):
-            DEBUG = True
-            print("MODO DEBUG ATIVADO")
-        elif(arg.lower == "-log"):
-            LOG = True
-            print("LOG ATIVADO")
     print("\n\nEsta é uma ferramenta utilizada para explorar a rede a fim de diagnosticar possíveis conflitos de IP em redes sem DHCP com vários dispositivos.\nEla coleta dados de scans feitos por NMAP com o tempo, e os organiza e salva em um arquivo chamado scan.xlsx.\nPara que a ferramenta funcione corretamente, tenha certeza de que ela está sendo executada em modo administrador para evitar potenciais erros.")
     local_arquivo:str = os.path.dirname(sys.executable)
     _ = re.split(r'/|\\', sys.executable)[-1].lower()
     if(_ == "python.exe"):
         local_arquivo = os.path.dirname(os.path.realpath(__file__))
     ARQUIVO_PLANILHA:str = local_arquivo + "/scan.xlsx"
-    if(LOG == True):
+    if(variaveis.LOG == True):
         print(sys.executable)
         print(ARQUIVO_PLANILHA)
         print(local_arquivo)
@@ -94,7 +85,7 @@ def main():
         #Inicia o processo de identificação de endereços disponíveis
         for ip in ips:
             curr = int(ip.split('.')[-1])
-            if(LOG == True):
+            if(variaveis.LOG == True):
                 print(f"{ip}\t{ips[ip]['status']}\tmac: {ips[ip]['mac'].ljust(20)}\tdetalhe: {ips[ip]['detalhe']}")
             if (curr>prev+1):
                 free_ip_lst.extend(free_ip_handler(ip_alvo=alvo, ip_atual=curr, ip_anterior=prev))
@@ -102,14 +93,14 @@ def main():
         #Caso o último IP em uso tenha o final menor que a variável <fim> (geralmente .255), realiza-se mais uma checagem adicionando todos os IPs entre o último em uso até <fim> (.255)
         if (prev<255):
             free_ip_lst.extend(free_ip_handler(ip_alvo=alvo, ip_atual=fim+1, ip_anterior=prev)) 
-        if(LOG == True):
+        if(variaveis.LOG == True):
             print(f"\n{"-"*50}\n\nLIVRES: \n")
             print(*free_ip_lst, sep='\n')
             print(len(ips))
         salvar_planilha(arquivo=ARQUIVO_PLANILHA, ips=ips, freeip=free_ip_lst, fim=fim, tempo=tempo)
         now = datetime.datetime.now()
         print(f"{now.strftime("%H:%M:%S")}: Scan em {alvo} realizado com sucesso. Próximo scan em {tempo} minuto(s).")
-        if (DEBUG == False):
+        if (variaveis.DEBUG == False):
             time.sleep(tempo*60)
         else:
             time.sleep(10)
@@ -181,7 +172,6 @@ def validar_planilha(arquivo, alvo, fim):
 
 
 def criar_planilha(local_planilha:str, target:str, end:int): #Formata a planilha e coloca o IP alvo na primeira célula
-    global DEBUG, LOG
 
     wb = openpyxl.Workbook()
     statuswb = wb.active
@@ -214,18 +204,17 @@ def criar_planilha(local_planilha:str, target:str, end:int): #Formata a planilha
         dadoswb.cell(i+2, 1, f"{i:02d}") #+2 para compensar o início em 0 do horário e index 
     wb.save(local_planilha)
     grafico = Grafico()
-    grafico.setup(DEBUG, LOG, local_planilha)
+    grafico.setup(variaveis.DEBUG, variaveis.LOG, local_planilha)
     grafico.gerar_graficos()
 
 
 def salvar_planilha(arquivo:str, ips:dict, freeip:list, fim:int, tempo:int):
-    global DEBUG, LOG
     global ultima_hora
     global horario
    
     wb = openpyxl.load_workbook(arquivo)
     _conflito = 0
-    if(LOG == True):
+    if(variaveis.LOG == True):
         print(wb.sheetnames)
     wbstatus = wb["Status"]
     laranja = PatternFill(start_color="cf820e", end_color="cf820e", fill_type="solid")
@@ -257,7 +246,7 @@ def salvar_planilha(arquivo:str, ips:dict, freeip:list, fim:int, tempo:int):
                 wbstatus.cell(row=linha, column=1).fill = laranja
 
     _tempo = datetime.datetime.now().hour
-    if(DEBUG==True):
+    if(variaveis.DEBUG==True):
         _tempo = horario
         print(f"Horário(Debug): {_tempo}")
     if (_tempo != ultima_hora):
@@ -274,7 +263,7 @@ def salvar_planilha(arquivo:str, ips:dict, freeip:list, fim:int, tempo:int):
         wbdados.cell(_tempo+2, 3, len(freeip))
         wbdados.cell(_tempo+2, 6, _conflito)
         print(f"Testando a velocidade da internet...")
-        _velocidade = Velocidade().teste(LOG)
+        _velocidade = Velocidade().teste(variaveis.LOG)
         _velocidade = (_velocidade/1000000)/8 #/8 para mB
         _velocidade = round(_velocidade, 3)
         wbdados.cell(_tempo+2, 7, _velocidade)
