@@ -8,19 +8,41 @@ import datetime
 import openpyxl
 import shutil
 from openpyxl.styles import PatternFill
+import tkinter as tk
 
 from grafico import Grafico
 from velocidade import Velocidade
 import interface
+import variaveis
 
 DEBUG:bool = False
 LOG:bool = False
 ultima_hora = None
 horario = 22
 
+
 def main():
-    interface()
-    global DEBUG, LOG
+    variaveis.DEBUG = True
+    root = tk.Tk()
+    root.title("Scanner")
+    #root.geometry("800x600")
+    widgets = interface.Widgets(root)
+    widgets.add_label("Gateway", "Gateway Padrão:", 0, 0)
+    widgets.add_entry("Gateway", 1, 0, 4)
+    widgets.add_label("Prefix", "Prefixo:", 0, 2)
+    widgets.add_entry("Prefix", 1, 2)
+    widgets.add_label("Speed", "Velocidade(Mb):", 2, 2)
+    widgets.add_entry("Speed", 3, 2)
+
+    widgets.add_label("Options", "Opções de Scan:", 0, 3)
+    widgets.add_entry("Options", 1, 3)
+    widgets.add_label("Config", "Delay(min):", 2, 3)
+    widgets.add_entry("Config", 3, 3)
+
+    widgets.add_checkbox("Debug", "Debug", 0, 4, valor=variaveis.DEBUG)
+    widgets.add_checkbox("Log", "Log", 1, 4, valor=variaveis.LOG)
+    widgets.add_button("Start", "Iniciar", 0, 5, 4)
+    root.mainloop()
     if shutil.which("nmap") is None:
         input("NMAP não está instalado. Instale o Nmap antes de executar este programa.\nPressione ENTER para finalizar")
         SystemExit()
