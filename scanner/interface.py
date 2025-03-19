@@ -31,8 +31,12 @@ class Widgets():
         self.checkbox_widget[-1].grid(row=row, column=column, pady = 5)
 
     def click(self):
-        print(variaveis.DEBUG)
-        print("Button clicked")
+        if (variaveis.RUNNING == False):
+            variaveis.RUNNING = True
+            self.button_widget[0].config(text="Parar")
+        else:
+            variaveis.RUNNING = False
+            self.button_widget[0].config(text="Iniciar")
 
     def atualizar(self, name:str):
         print("Atualizando")
