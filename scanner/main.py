@@ -1,14 +1,17 @@
+import os, sys, time, re
+import threading
+import shutil
+
 import nmap
 import ipaddress
-import os
-import sys
-import re
-import time
+import socket
+
 import datetime
 import openpyxl
-import shutil
+
 from openpyxl.styles import PatternFill
 import tkinter as tk
+from tkinter import messagebox
 
 from grafico import Grafico
 from velocidade import Velocidade
@@ -20,31 +23,34 @@ horario = 22
 
 
 def main():
+    
+    if shutil.which("nmap") is None:
+        messagebox.showerror("Erro", "O NMAP não está instalado. Instale o Nmap antes de executar este programa.")
+        sys.exit(1)
+    messagebox.showwarning("Atenção!", "Esta é uma ferramenta utilizada para explorar a rede a fim de diagnosticar possíveis conflitos de IP em redes sem DHCP com vários dispositivos.\nEla coleta dados de scans feitos por NMAP com o tempo, e os organiza e salva em um arquivo chamado scan.xlsx.\nPara que a ferramenta funcione corretamente, tenha certeza de que ela está sendo executada em modo administrador para evitar potenciais erros.")
     variaveis.DEBUG = True
     root = tk.Tk()
     root.title("Scanner")
     #root.geometry("800x600")
     widgets = interface.Widgets(root)
-    widgets.add_label("Gateway", "Gateway Padrão:", 0, 0)
-    widgets.add_entry("Gateway", 1, 0, 4)
-    widgets.add_label("Prefix", "Prefixo:", 0, 2)
-    widgets.add_entry("Prefix", 1, 2)
-    widgets.add_label("Speed", "Velocidade(Mb):", 2, 2)
-    widgets.add_entry("Speed", 3, 2)
+    widgets.add_label("gateway", "Gateway Padrão:", 0, 0)
+    widgets.add_entry("gateway", 1, 0, 4)
+    widgets.add_label("prefix", "Prefixo:", 0, 2)
+    widgets.add_entry("prefix", 1, 2)
+    widgets.add_label("speed", "Velocidade(Mb):", 2, 2)
+    widgets.add_entry("speed", 3, 2)
+    widgets.add_label("options", "Opções de Scan:", 0, 3)
+    widgets.add_entry("options", 1, 3)
+    widgets.add_label("config", "Delay(min):", 2, 3)
+    widgets.add_entry("config", 3, 3)
+    widgets.add_checkbox("debug", "Debug", 0, 4, valor=variaveis.DEBUG)
+    widgets.add_checkbox("log", "Log", 1, 4, valor=variaveis.LOG)
+    widgets.add_button("start", "Iniciar", 0, 5, 4)
+    root.focus_force()
+    threads = threading.Thread(target=root.mainloop())
+    threads.start()
+    threads.join()
 
-    widgets.add_label("Options", "Opções de Scan:", 0, 3)
-    widgets.add_entry("Options", 1, 3)
-    widgets.add_label("Config", "Delay(min):", 2, 3)
-    widgets.add_entry("Config", 3, 3)
-
-    widgets.add_checkbox("Debug", "Debug", 0, 4, valor=variaveis.DEBUG)
-    widgets.add_checkbox("Log", "Log", 1, 4, valor=variaveis.LOG)
-    widgets.add_button("Start", "Iniciar", 0, 5, 4)
-    root.mainloop()
-    if shutil.which("nmap") is None:
-        input("NMAP não está instalado. Instale o Nmap antes de executar este programa.\nPressione ENTER para finalizar")
-        SystemExit()
-    print("\n\nEsta é uma ferramenta utilizada para explorar a rede a fim de diagnosticar possíveis conflitos de IP em redes sem DHCP com vários dispositivos.\nEla coleta dados de scans feitos por NMAP com o tempo, e os organiza e salva em um arquivo chamado scan.xlsx.\nPara que a ferramenta funcione corretamente, tenha certeza de que ela está sendo executada em modo administrador para evitar potenciais erros.")
     local_arquivo:str = os.path.dirname(sys.executable)
     _ = re.split(r'/|\\', sys.executable)[-1].lower()
     if(_ == "python.exe"):
@@ -54,9 +60,7 @@ def main():
         print(sys.executable)
         print(ARQUIVO_PLANILHA)
         print(local_arquivo)
-    
-    print(f"\n{"-"*50}\n")
-    dados:dict = coletar_dados()
+    dados:dict = inserir_dados()
     alvo:str = dados["alvo"]
     fim:int = dados["fim"]
     conf:str = dados["conf"]
@@ -106,13 +110,15 @@ def main():
             time.sleep(10)
 
 
-def coletar_dados():
+def inserir_dados():
     alvo:str = ""
     fim:int = 255
     conf:str = "-sn" #sn Escaneia a rede mais rapidamente ao não buscar por portas. A remoção pode aumentar o número de resultados, mas irá aumentar drasticamente o tempo de execução da tarefa.
     tempo:int = 1
+
     while True:
         try:
+            socket.socket
             alvo = input("Digite o ip do seu gateway padrão ou dispositivo que deseja verificar: Ex 192.168.1.1\n")
             ipaddress.IPv4Address(alvo)
             break
