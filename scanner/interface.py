@@ -1,4 +1,3 @@
-
 import tkinter as tk
 from tkinter import ttk
 import variaveis
@@ -8,6 +7,7 @@ class Widgets():
     label_widget:ttk.Label = {}
     button_widget:ttk.Button = {}
     checkbox_widget:ttk.Checkbutton = {}
+    text_widget:tk.Text = {}
     root = None
     def __init__(self, root):
         self.root = root
@@ -25,6 +25,16 @@ class Widgets():
         self.checkbox_vars[name] = tk.BooleanVar(value=False)
         self.checkbox_widget[name] = ttk.Checkbutton(self.root, text=text, variable=self.checkbox_vars[name], command = lambda: self.atualizar(name))
         self.checkbox_widget[name].grid(row=row, column=column, pady = 5)
+    def add_text(self, name:str, text:str, column:int, row:int, columnspan:int=1):
+        frame = tk.Frame(self.root)  # Create a frame to hold the text widget and scrollbar
+        frame.grid(row=row, column=column, columnspan=columnspan, rowspan=6, pady=5, padx=10, sticky="ew")
+        
+        self.text_widget[name] = tk.Text(frame, height=10, width=50, wrap="word", state="disabled")
+        scrollbar = ttk.Scrollbar(frame, orient="vertical", command=self.text_widget[name].yview)
+        self.text_widget[name].configure(yscrollcommand=scrollbar.set)
+        
+        self.text_widget[name].pack(side="left", fill="both", expand=True)
+        scrollbar.pack(side="right", fill="y")
 
     def click(self):
         if (variaveis.RUNNING == False):

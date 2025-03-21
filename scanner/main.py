@@ -46,6 +46,7 @@ def main():
     widgets.add_checkbox("debug", "Debug", 0, 4, valor=variaveis.DEBUG)
     widgets.add_checkbox("log", "Log", 1, 4, valor=variaveis.LOG)
     widgets.add_button("start", "Iniciar", 0, 5, 4)
+    widgets.add_text("text", "", 5, 0, 4)
     root.focus_force()
     threads = threading.Thread(target=root.mainloop())
     threads.start()
