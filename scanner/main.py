@@ -41,8 +41,8 @@ def main():
     widgets.add_entry("speed", 3, 2)
     widgets.add_label("options", "Opções de Scan:", 0, 3)
     widgets.add_entry("options", 1, 3)
-    widgets.add_label("config", "Delay(min):", 2, 3)
-    widgets.add_entry("config", 3, 3)
+    widgets.add_label("delay", "Delay(min):", 2, 3)
+    widgets.add_entry("delay", 3, 3)
     widgets.add_checkbox("debug", "Debug", 0, 4, valor=variaveis.DEBUG)
     widgets.add_checkbox("log", "Log", 1, 4, valor=variaveis.LOG)
     widgets.add_button("start", "Iniciar", 0, 5, 4)
@@ -50,7 +50,12 @@ def main():
     root.focus_force()
     threads = threading.Thread(target=root.mainloop())
     threads.start()
-    threads.join()
+    while True:
+        if(variaveis.RUNNING == True):
+            delay = widgets.entry_widget["delay"].get()
+            
+        else:
+            time.sleep(1)
 
     local_arquivo:str = os.path.dirname(sys.executable)
     _ = re.split(r'/|\\', sys.executable)[-1].lower()
