@@ -50,12 +50,16 @@ def main():
     root.focus_force()
     threads = threading.Thread(target=root.mainloop())
     threads.start()
-    while True:
-        if(variaveis.RUNNING == True):
-            delay = widgets.entry_widget["delay"].get()
-            
-        else:
-            time.sleep(1)
+    widgets.entry_widget["gateway"].config({"text":"10.10.10.10"})
+    while False:
+        variaveis.RUNNING.wait()
+        delay = widgets.entry_widget["delay"].get()
+        alvo:str = widgets.entry_widget["gateway"].get()
+        fim:int = widgets.entry_widget["prefix"].get()
+        conf:str = widgets.entry_widget["options"].get()
+        mapa:nmap.nmap.PortScanner
+
+
 
     local_arquivo:str = os.path.dirname(sys.executable)
     _ = re.split(r'/|\\', sys.executable)[-1].lower()
