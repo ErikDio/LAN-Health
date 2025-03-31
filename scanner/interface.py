@@ -2,9 +2,12 @@ import tkinter as tk
 from tkinter import ttk
 import variaveis
 import ipaddress
+import scan
+import threading
 
 class Widgets():
     entry_widget:tk.Entry = {}
+    entry_text:tk.Text
     label_widget:ttk.Label = {}
     button_widget:ttk.Button = {}
     checkbox_widget:ttk.Checkbutton = {}
@@ -14,7 +17,7 @@ class Widgets():
         self.root = root
         self.checkbox_vars = {}
     def add_entry(self, name:str, column:int, row:int, columnspan:int=1):
-        self.entry_widget[name] = tk.Entry(self.root, bg="white", highlightbackground="red", highlightthickness=1)
+        self.entry_widget[name] = tk.Entry(self.root, bg="white")
         self.entry_widget[name].grid(row=row, column=column, columnspan=columnspan, pady=5, padx=2, sticky="ew")
     def add_label(self, name:str, text:str, column:int, row:int):
         self.label_widget[name] = ttk.Label(self.root, text=text)

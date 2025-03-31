@@ -5,6 +5,7 @@ import shutil
 import nmap
 import ipaddress
 import socket
+import netifaces
 
 import datetime
 import openpyxl
@@ -37,7 +38,7 @@ def main():
     widgets.add_entry("gateway", 1, 0, 4)
     widgets.add_label("prefix", "Prefixo:", 0, 2)
     widgets.add_entry("prefix", 1, 2)
-    widgets.add_label("speed", "Velocidade(Mb):", 2, 2)
+    widgets.add_label("speed", "Velocidade(MB):", 2, 2)
     widgets.add_entry("speed", 3, 2)
     widgets.add_label("options", "Opções de Scan:", 0, 3)
     widgets.add_entry("options", 1, 3)
@@ -48,17 +49,29 @@ def main():
     widgets.add_button("start", "Iniciar", 0, 5, 4)
     widgets.add_text("text", "", 5, 0, 4)
     root.focus_force()
+    try:
+        gateways = netifaces.gateways()
+        default_gateway = gateways.get('default', {}).get(netifaces.AF_INET)
+        widgets.entry_widget["gateway"].insert(0, default_gateway[0])
+        widgets.entry_widget["prefix"].insert(0, "24")
+        widgets.entry_widget["speed"].insert(0, "20")
+        widgets.entry_widget["options"].insert(0, "-sn")
+        widgets.entry_widget["delay"].insert(0, "10")
+    except:
+        pass
     threads = threading.Thread(target=root.mainloop())
     threads.start()
-    widgets.entry_widget["gateway"].config({"text":"10.10.10.10"})
-    while False:
+    
+    
+    while True:
         variaveis.RUNNING.wait()
         delay = widgets.entry_widget["delay"].get()
         alvo:str = widgets.entry_widget["gateway"].get()
         fim:int = widgets.entry_widget["prefix"].get()
         conf:str = widgets.entry_widget["options"].get()
         mapa:nmap.nmap.PortScanner
-
+        print(f"delay: {delay}")
+        time.sleep(5)
 
 
     local_arquivo:str = os.path.dirname(sys.executable)
