@@ -5,6 +5,7 @@ import ipaddress
 import scan
 import threading
 
+
 class Widgets():
     entry_widget:tk.Entry = {}
     entry_text:tk.Text
@@ -41,43 +42,63 @@ class Widgets():
         scrollbar.pack(side="right", fill="y")
 
     def click(self):
-        if (variaveis.RUNNING.is_set() == False):
-            start = True
-            try:
-                ipaddress.IPv4Address(self.entry_widget["gateway"].get())
-                self.entry_widget["gateway"].config(bg="white")
-            except:
-                self.entry_widget["gateway"].config(bg="red")
-                start = False
-            if (self.entry_widget["delay"].get().isdigit() == False):
-                self.entry_widget["delay"].config(bg="red")
-                start = False
-            else:
-                self.entry_widget["delay"].config(bg="white")
-            if (self.entry_widget["speed"].get().isdigit() == False):
-                self.entry_widget["speed"].config(bg="red")
-                start = False
-            else:
-                self.entry_widget["speed"].config(bg="white")
-            if (self.entry_widget["prefix"].get().isdigit() == False):
-                self.entry_widget["prefix"].config(bg="red")
-                start = False
-            else:
-                self.entry_widget["prefix"].config(bg="white")
-            if(start == True):
-                variaveis.RUNNING.set()
-                self.button_widget["start"].config(text="Parar")
-                for formulario in self.entry_widget:
-                    self.entry_widget[formulario].config(state="disabled")
-                for chkbox in self.checkbox_widget:
-                    self.checkbox_widget[chkbox].config(state="disabled")
+        if (variaveis.RUNNING == False):
+            threading.Thread(target=self.iniciar).start()
         else:
-            variaveis.RUNNING.clear()
-            self.button_widget["start"].config(text="Iniciar")
+            threading.Thread(target=self.parar).start()
+    def iniciar(self):
+        start = True
+        try:
+            ipaddress.IPv4Address(self.entry_widget["gateway"].get())
+            self.entry_widget["gateway"].config(bg="white")
+        except:
+            self.entry_widget["gateway"].config(bg="red")
+            start = False
+        if (self.entry_widget["delay"].get().isdigit() == False):
+            self.entry_widget["delay"].config(bg="red")
+            start = False
+        else:
+            self.entry_widget["delay"].config(bg="white")
+        if (self.entry_widget["speed"].get().isdigit() == False):
+            self.entry_widget["speed"].config(bg="red")
+            start = False
+        else:
+            self.entry_widget["speed"].config(bg="white")
+        if (self.entry_widget["prefix"].get().isdigit() == False):
+            self.entry_widget["prefix"].config(bg="red")
+            start = False
+        else:
+            self.entry_widget["prefix"].config(bg="white")
+
+        if(start == True): 
+            delay = int(self.entry_widget["delay"].get())
+            gateway = self.entry_widget["gateway"].get()
+            prefix = int(self.entry_widget["prefix"].get())
+            speed = int(self.entry_widget["speed"].get())
+            config = self.entry_widget["options"].get()
+            scanner = scan.Scan(delay=delay, gateway=gateway, prefix=prefix, speed=speed, config=config)
+            variaveis.RUNNING = True
+            threading.Thread(target=scanner.run).start()
+            self.button_widget["start"].config(text="Parar")
             for formulario in self.entry_widget:
-                self.entry_widget[formulario].config(state="normal", bg="white")
+                self.entry_widget[formulario].config(state="disabled")
             for chkbox in self.checkbox_widget:
-                self.checkbox_widget[chkbox].config(state="normal")
+                self.checkbox_widget[chkbox].config(state="disabled")
+
+    def parar(self):
+        self.button_widget["start"].config(state="disabled")
+        self.button_widget["start"].config(text="Parando... Aguarde")
+        variaveis.RUNNING = False
+        variaveis.FINISHING.set()
+        threading.Event.wait(variaveis.ABORTED)
+        variaveis.ABORTED.clear()
+        variaveis.FINISHING.clear()
+        self.button_widget["start"].config(text="Iniciar")
+        self.button_widget["start"].config(state="normal")
+        for formulario in self.entry_widget:
+            self.entry_widget[formulario].config(state="normal", bg="white")
+        for chkbox in self.checkbox_widget:
+            self.checkbox_widget[chkbox].config(state="normal")
 
     def atualizar(self, name:str):
         print("Atualizando")

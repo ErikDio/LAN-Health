@@ -1,5 +1,4 @@
 import os, sys, time, re
-import threading
 import shutil
 
 import nmap
@@ -59,8 +58,7 @@ def main():
         widgets.entry_widget["delay"].insert(0, "10")
     except:
         pass
-    threads = threading.Thread(target=root.mainloop())
-    threads.start()
+    root.mainloop()
     
     
     while True:
