@@ -4,7 +4,7 @@ import variaveis
 import ipaddress
 import scan
 import threading
-
+import time
 
 class Widgets():
     entry_widget:tk.Entry = {}
@@ -17,6 +17,7 @@ class Widgets():
     def __init__(self, root):
         self.root = root
         self.checkbox_vars = {}
+        threading.Thread(target=self.atualizar_texto).start()
     def add_entry(self, name:str, column:int, row:int, columnspan:int=1):
         self.entry_widget[name] = tk.Entry(self.root, bg="white")
         self.entry_widget[name].grid(row=row, column=column, columnspan=columnspan, pady=5, padx=2, sticky="ew")
@@ -106,3 +107,12 @@ class Widgets():
             variaveis.DEBUG = self.checkbox_vars[name].get()
         elif(name.lower() == "log"):
             variaveis.LOG = self.checkbox_vars[name].get()
+    def atualizar_texto(self):
+        while True:
+            variaveis.BARRIER.wait()
+            self.text_widget["text"].config(state="normal")
+            self.text_widget["text"].insert(tk.END, variaveis.BOX_TEXT + "\n")
+            self.text_widget["text"].see(tk.END)
+            self.text_widget["text"].config(state="disabled")
+            variaveis.BOX_TEXT = ""
+            variaveis.BARRIER.reset()

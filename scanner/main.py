@@ -58,6 +58,7 @@ def main():
         widgets.entry_widget["delay"].insert(0, "10")
     except:
         pass
+    variaveis.INIT = True
     root.mainloop()
     
     
