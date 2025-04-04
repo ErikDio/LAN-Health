@@ -4,7 +4,7 @@ import variaveis
 import ipaddress
 import scan
 import threading
-import time
+import log
 
 class Widgets():
     entry_widget:tk.Entry = {}
@@ -19,23 +19,23 @@ class Widgets():
         self.checkbox_vars = {}
         threading.Thread(target=self.atualizar_texto).start()
     def add_entry(self, name:str, column:int, row:int, columnspan:int=1):
-        self.entry_widget[name] = tk.Entry(self.root, bg="white")
-        self.entry_widget[name].grid(row=row, column=column, columnspan=columnspan, pady=5, padx=2, sticky="ew")
+        self.entry_widget[name] = tk.Entry(self.root, bg="white", font=("Arial", 14))
+        self.entry_widget[name].grid(row=row, column=column, columnspan=columnspan, pady=5, padx=5, sticky="ew")
     def add_label(self, name:str, text:str, column:int, row:int):
-        self.label_widget[name] = ttk.Label(self.root, text=text)
-        self.label_widget[name].grid(row=row, column=column, pady=2, padx=2)
+        self.label_widget[name] = ttk.Label(self.root, text=text, font=("Arial", 14))
+        self.label_widget[name].grid(row=row, column=column, pady=5, padx=5)
     def add_button(self, name:str, text:str, column:int, row:int, columnspan:int=1):
         self.button_widget[name] = (ttk.Button(self.root, text=text, command=self.click))
-        self.button_widget[name].grid(row=row, column=column, columnspan=columnspan, pady=5, padx=2, sticky="ew")
+        self.button_widget[name].grid(row=row, column=column, columnspan=columnspan, pady=5, padx=5, sticky="ew")
     def add_checkbox(self, name:str, text:str, column:int, row:int, valor=False):
         self.checkbox_vars[name] = tk.BooleanVar(value=False)
         self.checkbox_widget[name] = ttk.Checkbutton(self.root, text=text, variable=self.checkbox_vars[name], command=lambda: self.atualizar(name))
-        self.checkbox_widget[name].grid(row=row, column=column, pady=5)
+        self.checkbox_widget[name].grid(row=row, column=column, pady=5, padx=5)
     def add_text(self, name:str, text:str, column:int, row:int, columnspan:int=1):
         frame = tk.Frame(self.root)  # Create a frame to hold the text widget and scrollbar
-        frame.grid(row=row, column=column, columnspan=columnspan, rowspan=6, pady=5, padx=10, sticky="ew")
+        frame.grid(row=row, column=column, columnspan=columnspan, rowspan=6, pady=10, padx=10, sticky="ew")
         
-        self.text_widget[name] = tk.Text(frame, height=10, width=50, wrap="word", state="disabled")
+        self.text_widget[name] = tk.Text(frame, height=15, width=60, wrap="word", state="disabled", font=("Arial", 10))
         scrollbar = ttk.Scrollbar(frame, orient="vertical", command=self.text_widget[name].yview)
         self.text_widget[name].configure(yscrollcommand=scrollbar.set)
         
@@ -109,10 +109,10 @@ class Widgets():
             variaveis.LOG = self.checkbox_vars[name].get()
     def atualizar_texto(self):
         while True:
-            variaveis.BARRIER.wait()
+            threading.Event.wait(variaveis.READ)
             self.text_widget["text"].config(state="normal")
             self.text_widget["text"].insert(tk.END, variaveis.BOX_TEXT + "\n")
+            variaveis.BOX_TEXT = ""
             self.text_widget["text"].see(tk.END)
             self.text_widget["text"].config(state="disabled")
-            variaveis.BOX_TEXT = ""
-            variaveis.BARRIER.reset()
+            variaveis.READ.clear()

@@ -17,6 +17,7 @@ from grafico import Grafico
 from velocidade import Velocidade
 import interface
 import variaveis
+import log
 
 ultima_hora = None
 horario = 22
@@ -27,7 +28,6 @@ def main():
     if shutil.which("nmap") is None:
         messagebox.showerror("Erro", "O NMAP não está instalado. Instale o Nmap antes de executar este programa.")
         sys.exit(1)
-    messagebox.showwarning("Atenção!", "Esta é uma ferramenta utilizada para explorar a rede a fim de diagnosticar possíveis conflitos de IP em redes sem DHCP com vários dispositivos.\nEla coleta dados de scans feitos por NMAP com o tempo, e os organiza e salva em um arquivo chamado scan.xlsx.\nPara que a ferramenta funcione corretamente, tenha certeza de que ela está sendo executada em modo administrador para evitar potenciais erros.")
     variaveis.DEBUG = True
     root = tk.Tk()
     root.title("Scanner")
@@ -46,7 +46,7 @@ def main():
     widgets.add_checkbox("debug", "Debug", 0, 4, valor=variaveis.DEBUG)
     widgets.add_checkbox("log", "Log", 1, 4, valor=variaveis.LOG)
     widgets.add_button("start", "Iniciar", 0, 5, 4)
-    widgets.add_text("text", "", 5, 0, 4)
+    widgets.add_text("text", "", 0, 6, 4)
     root.focus_force()
     try:
         gateways = netifaces.gateways()
@@ -58,6 +58,7 @@ def main():
         widgets.entry_widget["delay"].insert(0, "10")
     except:
         pass
+    log.box_text("ATENÇÃO!\nEsta é uma ferramenta utilizada para explorar a rede a fim de diagnosticar possíveis conflitos de IP em redes sem DHCP com vários dispositivos.\nEla coleta dados de scans feitos por NMAP com o tempo, e os organiza e salva em um arquivo chamado scan.xlsx.\nPara que a ferramenta funcione corretamente, tenha certeza de que ela está sendo executada em modo administrador para evitar potenciais erros.")
     variaveis.INIT = True
     root.mainloop()
     
