@@ -34,11 +34,9 @@ class Widgets():
     def add_text(self, name:str, text:str, column:int, row:int, columnspan:int=1):
         frame = tk.Frame(self.root)  # Create a frame to hold the text widget and scrollbar
         frame.grid(row=row, column=column, columnspan=columnspan, rowspan=6, pady=10, padx=10, sticky="ew")
-        
         self.text_widget[name] = tk.Text(frame, height=15, width=60, wrap="word", state="disabled", font=("Arial", 10))
         scrollbar = ttk.Scrollbar(frame, orient="vertical", command=self.text_widget[name].yview)
         self.text_widget[name].configure(yscrollcommand=scrollbar.set)
-        
         self.text_widget[name].pack(side="left", fill="both", expand=True)
         scrollbar.pack(side="right", fill="y")
 

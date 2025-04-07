@@ -4,7 +4,8 @@ import time
 import nmap
 
 class Scan():
-    def __init__(self, delay:int, gateway, prefix:int, speed:int, config):
+    def __init__(self, alvo:str, delay:int, gateway, prefix:int, speed:int, config:str):
+        self.alvo:str = alvo
         self.delay:int = delay
         self.gateway:str = gateway
         self.prefix:int = prefix
