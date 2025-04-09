@@ -63,12 +63,17 @@ class Widgets():
             start = False
         else:
             self.entry_widget["speed"].config(bg="white")
-        if (self.entry_widget["prefix"].get().isdigit() == False):
+        try:
+            if(int(self.entry_widget["prefix"].get())<24):
+                if(log.popup("Atenção", "Prefixos menores que 24 não são recomendado. Demora no scan e alto uso de RAM são possíveis.\ndeseja continuar?", "yesno") == "no"):
+                    start = False
+            if(int(self.entry_widget["prefix"].get())>32):
+                log.popup("Atenção", "Prefixos maiores que 32 não são válidos.", "ok")
+                start = False
+            self.entry_widget["prefix"].config(bg="white")
+        except ValueError:
             self.entry_widget["prefix"].config(bg="red")
             start = False
-        else:
-            self.entry_widget["prefix"].config(bg="white")
-
         if(start == True): 
             delay = int(self.entry_widget["delay"].get())
             gateway = self.entry_widget["gateway"].get()
@@ -87,6 +92,7 @@ class Widgets():
     def parar(self):
         self.button_widget["start"].config(state="disabled")
         self.button_widget["start"].config(text="Parando... Aguarde")
+        log.box_text("Parando... Aguarde")
         variaveis.RUNNING = False
         variaveis.FINISHING.set()
         threading.Event.wait(variaveis.ABORTED)

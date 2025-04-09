@@ -29,6 +29,9 @@ class Scan():
         self.arquivo_planilha:str = local_arquivo + f"/scan-{self.alvo.replace('.', '-')}.xlsx"
         self.planilha:openpyxl.Workbook = self.validar_planilha()
         log.box_text_log(f"{self.gateway}/{self.prefix} {self.config} - {self.delay} minutos - {self.speed} MB/s")
+        self.lista_ips = self.gerar_ips()
+        self.lista_ips.remove(self.gateway)
+        log.box_text_log(f"IPs gerados: {', '.join(self.lista_ips)}")
 
     def gerar_ips(self):
         return [str(ip) for ip in ipaddress.IPv4Network(f"{self.gateway}/{self.prefix}", strict=False)]
@@ -37,7 +40,40 @@ class Scan():
         while True:
             if (variaveis.FINISHING.is_set() == True):
                 variaveis.ABORTED.set()
-                return    
+                return
+            now = datetime.datetime.now()
+            print(f"{now.strftime("%H:%M:%S")}: Iniciando o scan em {self.gateway}")
+            ips:dict = {}
+            self.mapa = self.nmap_scan(f"{self.gateway}/{self.prefix}", self.conf)
+            #Adiciona os IPs e MACs escaneados à variável "ips", em seguida os ordena em ordem crescente
+            for host in self.mapa.all_hosts():
+                mac = mac_detalhe = "Nan"
+                items = self.mapa[host]['vendor'].items()
+                if(items):
+                    for _mac, _macdet in items:
+                        mac = _mac
+                        mac_detalhe = _macdet
+                ips[host] = {"status":self.mapa[host].state(),"mac":mac,"detalhe":mac_detalhe}
+            ips = dict(sorted(ips.items(), key=lambda item: int(ipaddress.ip_address(item[0]))))
+            free_ip_lst:list = []
+            prev = 1
+            for ip in ips:
+                curr = int(ip.split('.')[-1])
+                if(variaveis.LOG == True):
+                    print(f"{ip}\t{ips[ip]['status']}\tmac: {ips[ip]['mac'].ljust(20)}\tdetalhe: {ips[ip]['detalhe']}")
+                if (curr>prev+1):
+                    free_ip_lst.extend(free_ip_handler(ip_alvo=alvo, ip_atual=curr, ip_anterior=prev))
+                prev = curr
+            #Caso o último IP em uso tenha o final menor que a variável <fim> (geralmente .255), realiza-se mais uma checagem adicionando todos os IPs entre o último em uso até <fim> (.255)
+            if (prev<255):
+                free_ip_lst.extend(free_ip_handler(ip_alvo=alvo, ip_atual=fim+1, ip_anterior=prev))
+            if(variaveis.LOG == True):
+                print(f"\n{"-"*50}\n\nLIVRES: \n")
+                print(*free_ip_lst, sep='\n')
+                print(len(ips))
+            salvar_planilha(arquivo=ARQUIVO_PLANILHA, ips=ips, freeip=free_ip_lst, fim=fim, tempo=tempo)
+            now = datetime.datetime.now()
+            print(f"{now.strftime("%H:%M:%S")}: Scan em {alvo} realizado com sucesso. Próximo scan em {tempo} minuto(s).")
             threading.Event.wait(variaveis.FINISHING, self.delay*60)
 
     def validar_planilha(self):
@@ -74,9 +110,9 @@ class Scan():
         statuswb.cell(1,3, "STATUS")
         statuswb.cell(1,4, "TEMPO ONLINE")
         statuswb.cell(1,5, "MAC")
-        for i, ip in enumerate(range(int(target.split('.')[-1]), end)): #Adiciona os IPs do escopo para a planilha e coloca o tempo de uso como 0
+        for i, ip in enumerate(self.lista_ips): #Adiciona os IPs do escopo para a planilha e coloca o tempo de uso como 0
             i+=2 #+2 compensa as primeiras linhas que não possuem IPs
-            statuswb.cell(i, 2, f"{".".join(target.split('.')[:-1])}.{str(ip+1)}")
+            statuswb.cell(i, 2, f"{ip}")
             statuswb.cell(i, 4, "0")
         dadoswb = wb["Dados"]
         dadoswb.cell(1,1,"HORÁRIO")
@@ -155,3 +191,11 @@ class Scan():
             _velocidade = round(_velocidade, 3)
             wbdados.cell(_tempo+2, 7, _velocidade)
         wb.save(arquivo)
+    def nmap_scan(target, conf): #Responsável por executar o NMAP no IP fornecido
+        resultado = nmap.PortScanner()
+        try:
+            resultado.scan(target, arguments=conf)
+        except Exception as e:
+            log.crash(f"Ocorreu o erro '{e}' ao tentar escanear a rede.\nCaso o erro persista, verifique se o nmap está corretamente instalado e se o programa tem privilégios suficiente.")
+            
+        return resultado

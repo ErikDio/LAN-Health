@@ -1,4 +1,4 @@
-import os, sys, time, re
+import os, time, re
 import shutil
 
 import nmap
@@ -24,10 +24,9 @@ horario = 22
 
 
 def main():
-    
+    print(log.popup("Teste", "Teste", "yesno"))
     if shutil.which("nmap") is None:
-        messagebox.showerror("Erro", "O NMAP não está instalado. Instale o Nmap antes de executar este programa.")
-        sys.exit(1)
+        log.crash("Erro", "O NMAP não está instalado. Instale o Nmap antes de executar este programa.")
     variaveis.DEBUG = True
     root = tk.Tk()
     root.title("Scanner")
