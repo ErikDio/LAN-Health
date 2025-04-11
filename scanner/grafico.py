@@ -1,15 +1,16 @@
 import openpyxl
 from openpyxl.chart import BarChart, Reference, LineChart
 import openpyxl.workbook
+import variaveis
+import log
+
 from copy import deepcopy
+
 class Grafico:
-    DEBUG = False
-    LOG = False
+
     arquivo_planilha = None
     
-    def setup(self, dbg, log, lcl):
-        self.DEBUG = dbg
-        self.LOG = log
+    def setup(self, lcl):
         self.arquivo_planilha = lcl
 
     def gerar_grafico_barra(titulo_y, dados, categorias):

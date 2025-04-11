@@ -1,47 +1,88 @@
+import os, time, re
+import shutil
+
 import nmap
 import ipaddress
-import os
-import sys
-import re
-import time
+import socket
+import netifaces
+
 import datetime
 import openpyxl
-import shutil
+
 from openpyxl.styles import PatternFill
+import tkinter as tk
+from tkinter import messagebox
 
 from grafico import Grafico
 from velocidade import Velocidade
+import interface
+import variaveis
+import log
 
-DEBUG:bool = False
-LOG:bool = False
 ultima_hora = None
 horario = 22
 
+
 def main():
-    global DEBUG, LOG
+    print(log.popup("Teste", "Teste", "yesno"))
     if shutil.which("nmap") is None:
-        input("NMAP não está instalado. Instale o Nmap antes de executar este programa.\nPressione ENTER para finalizar")
-        SystemExit()
-    for arg in sys.argv:
-        if(arg.lower() == "-debug"):
-            DEBUG = True
-            print("MODO DEBUG ATIVADO")
-        elif(arg.lower == "-log"):
-            LOG = True
-            print("LOG ATIVADO")
-    print("\n\nEsta é uma ferramenta utilizada para explorar a rede a fim de diagnosticar possíveis conflitos de IP em redes sem DHCP com vários dispositivos.\nEla coleta dados de scans feitos por NMAP com o tempo, e os organiza e salva em um arquivo chamado scan.xlsx.\nPara que a ferramenta funcione corretamente, tenha certeza de que ela está sendo executada em modo administrador para evitar potenciais erros.")
+        log.crash("Erro", "O NMAP não está instalado. Instale o Nmap antes de executar este programa.")
+    variaveis.DEBUG = True
+    root = tk.Tk()
+    root.title("Scanner")
+    #root.geometry("800x600")
+    widgets = interface.Widgets(root)
+    widgets.add_label("gateway", "Gateway Padrão:", 0, 0)
+    widgets.add_entry("gateway", 1, 0, 4)
+    widgets.add_label("prefix", "Prefixo:", 0, 2)
+    widgets.add_entry("prefix", 1, 2)
+    widgets.add_label("speed", "Velocidade(Mb):", 2, 2)
+    widgets.add_entry("speed", 3, 2)
+    widgets.add_label("options", "Opções de Scan:", 0, 3)
+    widgets.add_entry("options", 1, 3)
+    widgets.add_label("delay", "Delay(min):", 2, 3)
+    widgets.add_entry("delay", 3, 3)
+    widgets.add_checkbox("debug", "Debug", 0, 4, valor=variaveis.DEBUG)
+    widgets.add_checkbox("log", "Log", 1, 4, valor=variaveis.LOG)
+    widgets.add_button("start", "Iniciar", 0, 5, 4)
+    widgets.add_text("text", "", 0, 6, 4)
+    root.focus_force()
+    try:
+        gateways = netifaces.gateways()
+        default_gateway = gateways.get('default', {}).get(netifaces.AF_INET)
+        widgets.entry_widget["gateway"].insert(0, default_gateway[0])
+        widgets.entry_widget["prefix"].insert(0, "24")
+        widgets.entry_widget["speed"].insert(0, "20")
+        widgets.entry_widget["options"].insert(0, "-sn")
+        widgets.entry_widget["delay"].insert(0, "10")
+    except:
+        pass
+    log.box_text("ATENÇÃO!\nEsta é uma ferramenta utilizada para explorar a rede a fim de diagnosticar possíveis conflitos de IP em redes sem DHCP com vários dispositivos.\nEla coleta dados de scans feitos por NMAP com o tempo, e os organiza e salva em um arquivo chamado scan.xlsx.\nPara que a ferramenta funcione corretamente, tenha certeza de que ela está sendo executada em modo administrador para evitar potenciais erros.")
+    variaveis.INIT = True
+    root.mainloop()
+    
+    
+    while True:
+        variaveis.RUNNING.wait()
+        delay = widgets.entry_widget["delay"].get()
+        alvo:str = widgets.entry_widget["gateway"].get()
+        fim:int = widgets.entry_widget["prefix"].get()
+        conf:str = widgets.entry_widget["options"].get()
+        mapa:nmap.nmap.PortScanner
+        print(f"delay: {delay}")
+        time.sleep(5)
+
+
     local_arquivo:str = os.path.dirname(sys.executable)
     _ = re.split(r'/|\\', sys.executable)[-1].lower()
     if(_ == "python.exe"):
         local_arquivo = os.path.dirname(os.path.realpath(__file__))
     ARQUIVO_PLANILHA:str = local_arquivo + "/scan.xlsx"
-    if(LOG == True):
+    if(variaveis.LOG == True):
         print(sys.executable)
         print(ARQUIVO_PLANILHA)
         print(local_arquivo)
-    
-    print(f"\n{"-"*50}\n")
-    dados:dict = coletar_dados()
+    dados:dict = inserir_dados()
     alvo:str = dados["alvo"]
     fim:int = dados["fim"]
     conf:str = dados["conf"]
@@ -70,7 +111,7 @@ def main():
         #Inicia o processo de identificação de endereços disponíveis
         for ip in ips:
             curr = int(ip.split('.')[-1])
-            if(LOG == True):
+            if(variaveis.LOG == True):
                 print(f"{ip}\t{ips[ip]['status']}\tmac: {ips[ip]['mac'].ljust(20)}\tdetalhe: {ips[ip]['detalhe']}")
             if (curr>prev+1):
                 free_ip_lst.extend(free_ip_handler(ip_alvo=alvo, ip_atual=curr, ip_anterior=prev))
@@ -78,26 +119,28 @@ def main():
         #Caso o último IP em uso tenha o final menor que a variável <fim> (geralmente .255), realiza-se mais uma checagem adicionando todos os IPs entre o último em uso até <fim> (.255)
         if (prev<255):
             free_ip_lst.extend(free_ip_handler(ip_alvo=alvo, ip_atual=fim+1, ip_anterior=prev)) 
-        if(LOG == True):
+        if(variaveis.LOG == True):
             print(f"\n{"-"*50}\n\nLIVRES: \n")
             print(*free_ip_lst, sep='\n')
             print(len(ips))
         salvar_planilha(arquivo=ARQUIVO_PLANILHA, ips=ips, freeip=free_ip_lst, fim=fim, tempo=tempo)
         now = datetime.datetime.now()
         print(f"{now.strftime("%H:%M:%S")}: Scan em {alvo} realizado com sucesso. Próximo scan em {tempo} minuto(s).")
-        if (DEBUG == False):
+        if (variaveis.DEBUG == False):
             time.sleep(tempo*60)
         else:
             time.sleep(10)
 
 
-def coletar_dados():
+def inserir_dados():
     alvo:str = ""
     fim:int = 255
     conf:str = "-sn" #sn Escaneia a rede mais rapidamente ao não buscar por portas. A remoção pode aumentar o número de resultados, mas irá aumentar drasticamente o tempo de execução da tarefa.
     tempo:int = 1
+
     while True:
         try:
+            socket.socket
             alvo = input("Digite o ip do seu gateway padrão ou dispositivo que deseja verificar: Ex 192.168.1.1\n")
             ipaddress.IPv4Address(alvo)
             break
@@ -157,7 +200,6 @@ def validar_planilha(arquivo, alvo, fim):
 
 
 def criar_planilha(local_planilha:str, target:str, end:int): #Formata a planilha e coloca o IP alvo na primeira célula
-    global DEBUG, LOG
 
     wb = openpyxl.Workbook()
     statuswb = wb.active
@@ -190,18 +232,17 @@ def criar_planilha(local_planilha:str, target:str, end:int): #Formata a planilha
         dadoswb.cell(i+2, 1, f"{i:02d}") #+2 para compensar o início em 0 do horário e index 
     wb.save(local_planilha)
     grafico = Grafico()
-    grafico.setup(DEBUG, LOG, local_planilha)
+    grafico.setup(variaveis.DEBUG, variaveis.LOG, local_planilha)
     grafico.gerar_graficos()
 
 
 def salvar_planilha(arquivo:str, ips:dict, freeip:list, fim:int, tempo:int):
-    global DEBUG, LOG
     global ultima_hora
     global horario
    
     wb = openpyxl.load_workbook(arquivo)
     _conflito = 0
-    if(LOG == True):
+    if(variaveis.LOG == True):
         print(wb.sheetnames)
     wbstatus = wb["Status"]
     laranja = PatternFill(start_color="cf820e", end_color="cf820e", fill_type="solid")
@@ -233,7 +274,7 @@ def salvar_planilha(arquivo:str, ips:dict, freeip:list, fim:int, tempo:int):
                 wbstatus.cell(row=linha, column=1).fill = laranja
 
     _tempo = datetime.datetime.now().hour
-    if(DEBUG==True):
+    if(variaveis.DEBUG==True):
         _tempo = horario
         print(f"Horário(Debug): {_tempo}")
     if (_tempo != ultima_hora):
@@ -250,7 +291,7 @@ def salvar_planilha(arquivo:str, ips:dict, freeip:list, fim:int, tempo:int):
         wbdados.cell(_tempo+2, 3, len(freeip))
         wbdados.cell(_tempo+2, 6, _conflito)
         print(f"Testando a velocidade da internet...")
-        _velocidade = Velocidade().teste(LOG)
+        _velocidade = Velocidade().teste(variaveis.LOG)
         _velocidade = (_velocidade/1000000)/8 #/8 para mB
         _velocidade = round(_velocidade, 3)
         wbdados.cell(_tempo+2, 7, _velocidade)
