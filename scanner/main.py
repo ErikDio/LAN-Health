@@ -36,7 +36,7 @@ def main():
     widgets.add_entry("gateway", 1, 0, 4)
     widgets.add_label("prefix", "Prefixo:", 0, 2)
     widgets.add_entry("prefix", 1, 2)
-    widgets.add_label("speed", "Velocidade(MB):", 2, 2)
+    widgets.add_label("speed", "Velocidade(Mb):", 2, 2)
     widgets.add_entry("speed", 3, 2)
     widgets.add_label("options", "Opções de Scan:", 0, 3)
     widgets.add_entry("options", 1, 3)

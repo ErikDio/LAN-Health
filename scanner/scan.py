@@ -58,9 +58,8 @@ class Scan():
             free_ip_lst:list = []
             prev = 1
             for ip in ips:
-                curr = int(ip.split('.')[-1])
-                if(variaveis.LOG == True):
-                    print(f"{ip}\t{ips[ip]['status']}\tmac: {ips[ip]['mac'].ljust(20)}\tdetalhe: {ips[ip]['detalhe']}")
+
+                log.box_text_log(f"{ip}\t{ips[ip]['status']}\tmac: {ips[ip]['mac'].ljust(20)}\tdetalhe: {ips[ip]['detalhe']}")
                 if (curr>prev+1):
                     free_ip_lst.extend(free_ip_handler(ip_alvo=alvo, ip_atual=curr, ip_anterior=prev))
                 prev = curr
@@ -71,7 +70,7 @@ class Scan():
                 print(f"\n{"-"*50}\n\nLIVRES: \n")
                 print(*free_ip_lst, sep='\n')
                 print(len(ips))
-            salvar_planilha(arquivo=ARQUIVO_PLANILHA, ips=ips, freeip=free_ip_lst, fim=fim, tempo=tempo)
+            self.salvar_planilha(ips=ips, freeip=free_ip_lst)
             now = datetime.datetime.now()
             print(f"{now.strftime("%H:%M:%S")}: Scan em {alvo} realizado com sucesso. Próximo scan em {tempo} minuto(s).")
             threading.Event.wait(variaveis.FINISHING, self.delay*60)
@@ -131,15 +130,14 @@ class Scan():
         grafico.gerar_graficos()
 
 
-    def salvar_planilha(self, arquivo:str, ips:dict, freeip:list, fim:int, tempo:int):
+    def salvar_planilha(self, ips:dict, freeip:list):
         global ultima_hora
         global horario
     
-        wb = openpyxl.load_workbook(arquivo)
         _conflito = 0
         if(variaveis.LOG == True):
-            print(wb.sheetnames)
-        wbstatus = wb["Status"]
+            print(self.planilha.sheetnames)
+        wbstatus = self.planilha["Status"]
         laranja = PatternFill(start_color="cf820e", end_color="cf820e", fill_type="solid")
         verde = PatternFill(start_color="68cf0e", end_color="68cf0e", fill_type="solid")
         vermelho = PatternFill(start_color="cf0e2b", end_color="cf0e2b", fill_type="solid")
@@ -173,7 +171,7 @@ class Scan():
             _tempo = horario
             print(f"Horário(Debug): {_tempo}")
         if (_tempo != ultima_hora):
-            wbdados = wb["Dados"]
+            wbdados = self.planilha["Dados"]
             if(_tempo == 0 and ultima_hora != None):
                 wbdados.move_range("B2:C25", cols=2)
                 wbdados.move_range("G2:G25", cols=1)
@@ -186,16 +184,15 @@ class Scan():
             wbdados.cell(_tempo+2, 3, len(freeip))
             wbdados.cell(_tempo+2, 6, _conflito)
             log.box_text_log(f"Testando a velocidade da internet...")
-            _velocidade = Velocidade().teste(variaveis.LOG)
+            _velocidade = Velocidade().teste()
             _velocidade = (_velocidade/1000000)/8 #/8 para mB
             _velocidade = round(_velocidade, 3)
             wbdados.cell(_tempo+2, 7, _velocidade)
-        wb.save(arquivo)
+        self.planilha.save(self.arquivo_planilha)
     def nmap_scan(target, conf): #Responsável por executar o NMAP no IP fornecido
         resultado = nmap.PortScanner()
         try:
             resultado.scan(target, arguments=conf)
         except Exception as e:
             log.crash(f"Ocorreu o erro '{e}' ao tentar escanear a rede.\nCaso o erro persista, verifique se o nmap está corretamente instalado e se o programa tem privilégios suficiente.")
-            
         return resultado
