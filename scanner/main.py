@@ -30,9 +30,9 @@ def main():
             LOG = True
             print("LOG ATIVADO")
     print("\n\nEsta é uma ferramenta utilizada para explorar a rede a fim de diagnosticar possíveis conflitos de IP em redes sem DHCP com vários dispositivos.\nEla coleta dados de scans feitos por NMAP com o tempo, e os organiza e salva em um arquivo chamado scan.xlsx.\nPara que a ferramenta funcione corretamente, tenha certeza de que ela está sendo executada em modo administrador para evitar potenciais erros.")
-    local_arquivo:str = os.path.dirname(sys.executable)
-    _ = re.split(r'/|\\', sys.executable)[-1].lower()
-    if(_ == "python.exe"):
+    if getattr(sys, 'frozen', False):
+        local_arquivo:str = os.path.dirname(sys.executable)
+    else:
         local_arquivo = os.path.dirname(os.path.realpath(__file__))
     ARQUIVO_PLANILHA:str = local_arquivo + "/scan.xlsx"
     if(LOG == True):
